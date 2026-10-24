@@ -16,11 +16,13 @@ script and the optional pre-push hook.
 ## 3. Release notes
 | Tag | Notes |
 |---|---|
-| v0.1.0 | First release: PC-1..PC-12 (everything from QuizApp's `tools/pipeline-check`, the six defects fixed, `--no-github`, `--version`). |
+| v0.1.0 | First release: PC-1..PC-12 (everything from QuizApp's `tools/pipeline-check`, the six defects fixed, `--no-github`, `--version`). Its copied hook had a defect: a first push of main was never checked. |
+| v0.2.0 | PC-13: the pre-push check moved into the program (`--pre-push`, `[pre_push] guard`), tested against real git repositories; the copied hook is now a three-line wrapper. Upgrade: change `pipeline-check.version`, replace `tools/hooks/pre-push` by `consumer/pre-push`, add `[pre_push]` to the toml. |
 
 ## 4. Decision log
 
 | Date | Type | Decision | Why |
 |---|---|---|---|
+| 2026-10-24 | Corrective | **The pre-push logic moved from a copied shell hook into the program** (PC-13, v0.2.0). A test of the hook in a throwaway repository showed that the first push of main was never checked (`git diff` against a single commit compares the work tree) | The same lesson as ADR-0003: logic copied into six repositories cannot be fixed or tested once. Now it is tested against real git repositories |
 | 2026-10-24 | Preventive | **One repository, consumed by pinned version** ([ADR-0003](docs/adr/0003-one-repository-consumed-by-version.md)); the repository is public so CI needs no token; `--no-github` for the local pre-push check; v0.1.0 | Five copies in five repositories were already drifting. Root cause and rule in the ADR |
 | 2026-10-24 | Preventive | **The program measures, a skill judges** ([ADR-0002](docs/adr/0002-program-measures-skill-judges.md)); bug-finding tests found and fixed six defects (`docs/TESTES-AUTOMATIZADOS.md`) | The gate held only because Claude remembered to run it |

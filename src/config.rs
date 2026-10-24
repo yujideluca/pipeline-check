@@ -16,6 +16,16 @@ pub struct Config {
     pub github: Option<Github>,
     #[serde(default)]
     pub dora: DoraCfg,
+    #[serde(default)]
+    pub pre_push: PrePush,
+}
+
+#[derive(Deserialize, Debug, Default)]
+#[serde(deny_unknown_fields)]
+pub struct PrePush {
+    /// path prefixes whose change makes a push of main worth checking; empty means every push is checked
+    #[serde(default)]
+    pub guard: Vec<String>,
 }
 
 fn default_warn() -> f64 {

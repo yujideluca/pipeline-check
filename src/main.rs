@@ -34,6 +34,9 @@ struct Args {
     /// measure this file in every file_size fitness function (publish_apk.sh passes the APK it just built)
     #[arg(long)]
     apk: Option<PathBuf>,
+    /// act as the git pre-push hook: read the refs from stdin, check a push of main, exit 1 to block it
+    #[arg(long)]
+    pre_push: bool,
     /// do not ask GitHub (used by the local pre-push check)
     #[arg(long)]
     no_github: bool,
@@ -52,6 +55,12 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
+    if args.pre_push {
+        let mut stdin = String::new();
+        let _ = std::io::Read::read_to_string(&mut std::io::stdin(), &mut stdin);
+        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs());
+        return ExitCode::from(pipeline_check::prepush::pre_push(&args.root, &cfg, &stdin, now, &RealGh) as u8);
+    }
     if let Some(cmd) = args.gate_command {
         cfg.gate.command = cmd;
     }

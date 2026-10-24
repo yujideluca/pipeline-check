@@ -18,3 +18,4 @@ Source: G = stated by Giovanni, D = derived by Claude Code and accepted.
 | PC-10 | Walking a source directory terminates and finishes even when it contains a symbolic link that points back up (no infinite recursion). | D |
 | PC-11 | A cancelled or skipped CI run is neither green nor red: "last CI run is green" looks at the most recent run that succeeded or failed. | D |
 | PC-12 | With `--no-github` the program runs the gate and the local checks but never asks GitHub (the local pre-push check uses it). | D |
+| PC-13 | `pipeline-check --pre-push` is a git pre-push hook: it runs the full local checks (without asking GitHub) before main is pushed and exits 1 to block the push when a check fails. Pushes of other branches, deletions and pushes that change only paths outside `[pre_push] guard` (path prefixes; empty means all) are not checked; a new main or a remote commit unknown locally counts every file as changed. | D |

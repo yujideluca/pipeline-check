@@ -6,6 +6,7 @@ pub mod fitness;
 pub mod fsutil;
 pub mod gate;
 pub mod github;
+pub mod prepush;
 pub mod report;
 
 use config::Config;

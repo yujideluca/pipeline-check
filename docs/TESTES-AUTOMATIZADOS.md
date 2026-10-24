@@ -1,6 +1,6 @@
 # Automated bug-finding tests: pipeline-check
 
-Last reviewed: v0.1.0 2026-10-24 (history before the move: QuizApp commit 64020bd)
+Last reviewed: v0.2.0 2026-10-24 (history before the move: QuizApp commit 64020bd)
 Created by the skill `gerar-teste-automatizado` (create mode). Update mode starts from the commit above.
 
 ## Analysis summary
@@ -32,7 +32,7 @@ python3 -I mutants.py     # demands that every planted fault makes the tests fai
 `tools/quality_gate.sh` runs both.
 
 ## Results (observed, 2026-10-24)
-43 tests run, 43 passed, 0 failed, 0 ignored. Before the fixes the new `tests/bugs.rs` had 6 failures out of 8 (the other 2 passed and documented already-correct behaviour). Mutation: 21 mutants killed, 0 survived, 1 invalid (does not compile, dropped). Two real gaps were found by survivors (build-file comment, top-level unknown key, measure-only) and closed with tests. Repeated runs are stable.
+50 tests run, 50 passed, 0 failed, 0 ignored. Before the fixes the new `tests/bugs.rs` had 6 failures out of 8 (the other 2 passed and documented already-correct behaviour). Mutation: 25 mutants killed, 0 survived, 1 equivalent mutant removed on purpose (a deleted ref has no files, so it is never guarded), 1 invalid (does not compile, dropped). Two real gaps were found by survivors (build-file comment, top-level unknown key, measure-only) and closed with tests. Repeated runs are stable.
 
 ## Coverage
 Not measured: `cargo-llvm-cov` and `cargo-mutants` are not installed. The hand-made mutants stand in for them; branch coverage is unknown.
@@ -43,6 +43,8 @@ Not measured: `cargo-llvm-cov` and `cargo-mutants` are not installed. The hand-m
 3. `walk` followed symbolic links: a link pointing up looped forever and a link to a file was listed as a file. Impact: a hung CI job.
 4. A cancelled latest CI run made "CI green" report `falha`. Impact: false red; the success rate counted cancelled runs as failures.
 5. (Found by mutation) the build-file check, the top-level typo rejection and `--measure-only` had no test that would notice them broken.
+
+5. (v0.1.0 hook, fixed by moving the logic into the program, PC-13) The first push of main was never checked because the changed-file list was computed against a single commit. Found by testing the hook in a throwaway repository; now covered by `tests/prepush.rs` (7 tests, real git repositories) and 5 more mutants.
 
 ## Limitations and residual risks
 String literals containing `android.` in `core/` would be flagged (accepted, rare in a pure module). `gh` real output formats are only tested with fakes; the real command was run once (403 on a private free-plan repo). Time zones: dates are UTC. No concurrency or performance tests (a single short process).

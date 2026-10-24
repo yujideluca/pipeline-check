@@ -14,8 +14,9 @@ branch protection requires the CI job (read-only, through `gh`). A check that co
 1. Copy `consumer/pipeline-check.sh` to `tools/pipeline-check.sh` and pin a version: `echo v0.1.0 > pipeline-check.version`.
 2. Write `pipeline-check.toml` (see `docs/pipeline-check.example.toml`).
 3. In CI: set up Rust (`dtolnay/rust-toolchain`) and run `tools/pipeline-check.sh --mode ci`.
-4. Optional local stand-in for branch protection: copy `consumer/pre-push` to `tools/hooks/pre-push`, set `GUARD`, and run
-   `git config core.hooksPath tools/hooks`.
+4. Optional local stand-in for branch protection: copy `consumer/pre-push` to `tools/hooks/pre-push`, set
+   `[pre_push] guard = ["path/prefix/"]` in `pipeline-check.toml` (empty: every push of main is checked) and run
+   `git config core.hooksPath tools/hooks`. The logic lives in the program (`--pre-push`), so an upgrade fixes every project.
 
 The script clones this repository at the pinned tag and builds it once per version. To upgrade, change the tag in
 `pipeline-check.version` after reading the release notes in `DESIGN.md`.
