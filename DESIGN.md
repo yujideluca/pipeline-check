@@ -18,6 +18,7 @@ script and the optional pre-push hook.
 |---|---|
 | v0.1.0 | First release: PC-1..PC-12 (everything from QuizApp's `tools/pipeline-check`, the six defects fixed, `--no-github`, `--version`). Its copied hook had a defect: a first push of main was never checked. |
 | v0.2.0 | PC-13: the pre-push check moved into the program (`--pre-push`, `[pre_push] guard`), tested against real git repositories; the copied hook is now a three-line wrapper. Upgrade: change `pipeline-check.version`, replace `tools/hooks/pre-push` by `consumer/pre-push`, add `[pre_push]` to the toml. |
+| v0.3.0 | PC-14: the requirement traceability check moved into the program (`--traceability`, `[traceability]` with `[[traceability.sources]]`), replacing the `tools/check_traceability.py` copied in four repositories. Upgrade: change `pipeline-check.version`, add `[traceability]` to the toml (folders, extensions, label/env as the old script had them), replace `python3 tools/check_traceability.py` in the gate by `tools/pipeline-check.sh --traceability`, delete the script, commit the regenerated matrix. |
 
 ## 4. Decision log
 

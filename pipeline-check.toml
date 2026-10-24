@@ -1,0 +1,16 @@
+# Limits for pipeline-check checking itself (github.com/yujideluca/pipeline-check). Changed only by Giovanni, in a commit that says why.
+projeto = "pipeline-check"
+
+[gate]
+command = "tools/quality_gate.sh"
+
+[architecture]
+pure_dirs = []
+
+[traceability]
+[[traceability.sources]]
+dir = "src"
+extensions = ["rs"]
+[[traceability.sources]]
+dir = "tests"
+extensions = ["rs"]

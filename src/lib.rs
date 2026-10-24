@@ -8,6 +8,7 @@ pub mod gate;
 pub mod github;
 pub mod prepush;
 pub mod report;
+pub mod traceability;
 
 use config::Config;
 use github::Gh;

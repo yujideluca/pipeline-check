@@ -7,7 +7,7 @@ step() { printf '\n== %s\n' "$1"; }
 step "1/3 cargo test"
 cargo test --quiet
 step "2/3 requirement traceability"
-python3 tools/check_traceability.py
+cargo run --quiet -- --traceability
 git diff --quiet -- docs/TRACEABILITY.md || { echo "docs/TRACEABILITY.md changed: commit the regenerated matrix"; exit 1; }
 step "3/3 mutation check (every planted fault must make the tests fail)"
 python3 -I mutants.py | tee /tmp/pipeline-check-mutants.txt | grep -E "^(killed|SURVIVED|COMPILE-ERR)" | awk -F' [|] ' '{print $1}' | sort | uniq -c

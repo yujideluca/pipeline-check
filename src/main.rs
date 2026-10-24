@@ -34,6 +34,9 @@ struct Args {
     /// measure this file in every file_size fitness function (publish_apk.sh passes the APK it just built)
     #[arg(long)]
     apk: Option<PathBuf>,
+    /// only the requirement traceability check: tag coverage of docs/REQUIREMENTS.md, writes the matrix; exit 1 on a gap
+    #[arg(long)]
+    traceability: bool,
     /// act as the git pre-push hook: read the refs from stdin, check a push of main, exit 1 to block it
     #[arg(long)]
     pre_push: bool,
@@ -55,6 +58,13 @@ fn main() -> ExitCode {
             return ExitCode::from(2);
         }
     };
+    if args.traceability {
+        let Some(t) = &cfg.traceability else {
+            eprintln!("pipeline-check: no [traceability] section in {}", config_path.display());
+            return ExitCode::from(2);
+        };
+        return ExitCode::from(pipeline_check::traceability::run(&args.root, t) as u8);
+    }
     if args.pre_push {
         let mut stdin = String::new();
         let _ = std::io::Read::read_to_string(&mut std::io::stdin(), &mut stdin);

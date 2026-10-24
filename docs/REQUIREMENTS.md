@@ -1,7 +1,7 @@
 # Requirements
 
 Every promise the program makes, with an ID. A test that checks it carries the tag `REQ <ID>` in a comment;
-`tools/check_traceability.py` fails when a requirement has no test or a tag names an unknown requirement.
+`pipeline-check --traceability` fails when a requirement has no test or a tag names an unknown requirement.
 Source: G = stated by Giovanni, D = derived by Claude Code and accepted.
 
 | ID | Requirement | Source |
@@ -19,3 +19,4 @@ Source: G = stated by Giovanni, D = derived by Claude Code and accepted.
 | PC-11 | A cancelled or skipped CI run is neither green nor red: "last CI run is green" looks at the most recent run that succeeded or failed. | D |
 | PC-12 | With `--no-github` the program runs the gate and the local checks but never asks GitHub (the local pre-push check uses it). | D |
 | PC-13 | `pipeline-check --pre-push` is a git pre-push hook: it runs the full local checks (without asking GitHub) before main is pushed and exits 1 to block the push when a check fails. Pushes of other branches, deletions and pushes that change only paths outside `[pre_push] guard` (path prefixes; empty means all) are not checked; a new main or a remote commit unknown locally counts every file as changed. | D |
+| PC-14 | `pipeline-check --traceability` reads the requirements table (`| XX-1 | text |` rows), collects the `REQ <ID>[, <ID>]` tags that comment lines carry in the configured test folders, and exits 1 when a requirement has no tagged test or a tag names an unknown requirement. It writes the matrix (requirement to test files, labelled by source) in every case; a missing requirements file or config section is exit 2, never a silent pass. This replaces the `check_traceability.py` that each project used to copy. | D |

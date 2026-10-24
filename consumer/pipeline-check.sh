@@ -3,6 +3,7 @@
 # https://github.com/yujideluca/pipeline-check). The program is built once per version into ~/.cache/pipeline-check.
 #   tools/pipeline-check.sh                  full run: gate, architecture, fitness, DORA, GitHub (mode local; ci when CI=true)
 #   tools/pipeline-check.sh --measure-only   only architecture and fitness (what the gate itself calls)
+#   tools/pipeline-check.sh --traceability   only the requirement traceability check (writes docs/TRACEABILITY.md)
 # PIPELINE_CHECK_DIR=~/dev/pipeline-check uses a working copy instead of the pinned tag (for developing the program).
 set -euo pipefail
 cd "$(dirname "$0")/.."

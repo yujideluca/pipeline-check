@@ -18,6 +18,45 @@ pub struct Config {
     pub dora: DoraCfg,
     #[serde(default)]
     pub pre_push: PrePush,
+    pub traceability: Option<Traceability>,
+}
+
+/// `[traceability]`: where the requirements table is and which test folders carry the `REQ <ID>` tags.
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct Traceability {
+    #[serde(default = "requirements_file")]
+    pub requirements: String,
+    #[serde(default = "matrix_file")]
+    pub matrix: String,
+    /// comment openers that may precede `REQ`
+    #[serde(default = "default_prefixes")]
+    pub comment_prefixes: Vec<String>,
+    pub sources: Vec<Source>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct Source {
+    /// folder of test files: relative to the root, or `~/...`; a missing folder contributes no tests
+    pub dir: String,
+    /// file extensions without the dot
+    pub extensions: Vec<String>,
+    /// shown before the file name in the matrix (for example `web`)
+    #[serde(default)]
+    pub label: String,
+    /// environment variable that, when set, replaces `dir`
+    pub env: Option<String>,
+}
+
+fn requirements_file() -> String {
+    "docs/REQUIREMENTS.md".into()
+}
+fn matrix_file() -> String {
+    "docs/TRACEABILITY.md".into()
+}
+fn default_prefixes() -> Vec<String> {
+    ["//", "#", "--", "/**", "*"].iter().map(|s| s.to_string()).collect()
 }
 
 #[derive(Deserialize, Debug, Default)]

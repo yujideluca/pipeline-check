@@ -5,7 +5,7 @@ project-template). Rust, Giovanni's choice (work.ask-language). Read `README.md`
 
 ## Principles (each one is checked by something)
 
-1. **Requirement, then test, then code**: `docs/REQUIREMENTS.md` → test tagged `REQ <ID>` → code. Checked by `tools/check_traceability.py`.
+1. **Requirement, then test, then code**: `docs/REQUIREMENTS.md` → test tagged `REQ <ID>` → code. Checked by `pipeline-check --traceability`.
 2. **The program measures, a skill judges** (ADR-0002): it never decides priorities; checked by the report having only measurements.
 3. **A tool used by more than one project lives here once and is consumed by pinned version, never copied** (ADR-0003).
 4. **The gate decides**: `tools/quality_gate.sh` (tests, traceability, hand-made mutation check), run by CI on every push.

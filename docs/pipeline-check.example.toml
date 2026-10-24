@@ -31,3 +31,12 @@ required_check = "gate"
 days = 30
 # feed_path = "~/dev/my-releases"
 decision_log = "DESIGN.md"
+
+[traceability]                           # optional: `pipeline-check --traceability` (REQ tags in tests, PC-14)
+# requirements = "docs/REQUIREMENTS.md"  # defaults
+# matrix = "docs/TRACEABILITY.md"
+[[traceability.sources]]
+dir = "tests"                            # relative to the root, or ~/...; a missing folder contributes nothing
+extensions = ["py", "kt", "js"]
+# label = "web"                          # shown before the file name in the matrix
+# env = "QUIZWEB"                        # when set, replaces dir
