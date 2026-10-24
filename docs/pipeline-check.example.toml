@@ -1,0 +1,33 @@
+projeto = "my-project"
+aviso_a = 0.8                 # warn from 80 % of a limit, fail at 100 %
+
+[gate]
+command = "tools/quality_gate.sh"
+required = true
+
+[architecture]
+pure_dirs = ["core/src"]                 # sources that must not import the forbidden packages
+build_files = ["core/build.gradle.kts"]  # build files that must not name them
+# forbidden = ["android", "androidx"]    # default
+
+[[fitness]]
+id = "arquivo-maior"
+kind = "max_file_lines"                  # or "file_size" (path = "...") or "gate_seconds"
+limit = 400
+dirs = ["core/src"]
+extensions = ["kt"]
+
+[[fitness]]
+id = "gate-segundos"
+kind = "gate_seconds"
+limit = 1200
+
+[github]                                 # local mode only
+repo = "yujideluca/my-project"
+branch = "main"
+required_check = "gate"
+
+[dora]
+days = 30
+# feed_path = "~/dev/my-releases"
+decision_log = "DESIGN.md"
