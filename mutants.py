@@ -40,6 +40,7 @@ muts = [
  ("src/traceability.rs", "eprintln!(\"pipeline-check: cannot read {}\", cfg.requirements);\n        return 2;", "eprintln!(\"pipeline-check: cannot read {}\", cfg.requirements);\n        return 0;"),
  ("src/traceability.rs", "if !a.ok() {\n        return 1;", "if false {\n        return 1;"),
  ("src/traceability.rs", "if !fsutil::has_ext(&path, &s.extensions) {", "if false {"),
+ ("src/traceability.rs", "Some(rest) => Path::new(home).join(rest),", "Some(rest) => root.join(rest),"),
  ("src/main.rs", "ExitCode::from(report.exit_code() as u8)", "ExitCode::from(0)"),
  ("src/main.rs", "return ExitCode::from(2);\n        }\n    };\n    if let Some(cmd)", "return ExitCode::from(1);\n        }\n    };\n    if let Some(cmd)"),
 ]

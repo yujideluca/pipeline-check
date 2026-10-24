@@ -95,12 +95,17 @@ pub fn matrix(a: &Analysis) -> String {
     out
 }
 
-fn source_dir(root: &Path, s: &Source) -> PathBuf {
-    let raw = s.env.as_ref().and_then(|v| std::env::var(v).ok()).unwrap_or_else(|| s.dir.clone());
+/// A source folder: `~/x` is under the home folder, anything else is relative to the project root.
+pub fn resolve(root: &Path, raw: &str, home: &str) -> PathBuf {
     match raw.strip_prefix("~/") {
-        Some(rest) => PathBuf::from(std::env::var("HOME").unwrap_or_default()).join(rest),
+        Some(rest) => Path::new(home).join(rest),
         None => root.join(raw),
     }
+}
+
+fn source_dir(root: &Path, s: &Source) -> PathBuf {
+    let raw = s.env.as_ref().and_then(|v| std::env::var(v).ok()).unwrap_or_else(|| s.dir.clone());
+    resolve(root, &raw, &std::env::var("HOME").unwrap_or_default())
 }
 
 /// Runs the check; prints the problems; returns the process exit code (0 ok, 1 gaps, 2 unreadable input).

@@ -1,6 +1,6 @@
 //! PC-14: the traceability check, against small fixture projects.
 use pipeline_check::config::{Source, Traceability};
-use pipeline_check::traceability::{analyze, matrix, parse_requirements, run, tags_in_line};
+use pipeline_check::traceability::{analyze, matrix, parse_requirements, resolve, run, tags_in_line};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -107,4 +107,13 @@ fn a_source_can_be_labelled_and_redirected_by_an_environment_variable() {
     cfg.sources.push(Source { dir: "does-not-exist".into(), extensions: vec!["rs".into()], label: "web".into(), env: Some(var) });
     assert_eq!(run(&root, &cfg), 0);
     assert!(std::fs::read_to_string(root.join("docs/TRACEABILITY.md")).unwrap().contains("| AB-2 second thing | web:w.rs |"));
+}
+
+// REQ PC-14
+#[test]
+fn a_tilde_folder_is_under_home_and_any_other_folder_under_the_root() {
+    let root = std::path::Path::new("/r");
+    assert_eq!(resolve(root, "~/dev/QuizWeb/tests", "/home/u"), PathBuf::from("/home/u/dev/QuizWeb/tests"));
+    assert_eq!(resolve(root, "core/src/test", "/home/u"), PathBuf::from("/r/core/src/test"));
+    assert_eq!(resolve(root, "~x/t", "/home/u"), PathBuf::from("/r/~x/t"));
 }
