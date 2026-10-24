@@ -8,6 +8,7 @@ pub mod gate;
 pub mod github;
 pub mod prepush;
 pub mod report;
+pub mod shellcheck;
 pub mod traceability;
 
 use config::Config;
@@ -36,6 +37,9 @@ pub fn run(root: &Path, cfg: &Config, opts: &Options, gh: &dyn Gh) -> Report {
         gate_seconds = secs;
     }
     checks.push(arch::check(root, &cfg.architecture));
+    if let Some(sc) = &cfg.shellcheck {
+        checks.push(shellcheck::check(root, sc));
+    }
     checks.extend(fitness::check_all(root, cfg, gate_seconds, opts.measure_only));
 
     // Check e needs the laptop's GitHub login; CI cannot read branch protection with its default token (C1).

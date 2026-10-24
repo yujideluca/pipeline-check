@@ -41,8 +41,13 @@ muts = [
  ("src/traceability.rs", "if !a.ok() {\n        return 1;", "if false {\n        return 1;"),
  ("src/traceability.rs", "if !fsutil::has_ext(&path, &s.extensions) {", "if false {"),
  ("src/traceability.rs", "Some(rest) => Path::new(home).join(rest),", "Some(rest) => root.join(rest),"),
+ ("src/shellcheck.rs", "Ok(o) if o.status.success() => Check::new(ID, Status::Ok", "Ok(o) if !o.status.success() => Check::new(ID, Status::Ok"),
+ ("src/shellcheck.rs", "Err(_) => Check::skipped(ID, false, \"shellcheck is not installed\")", "Err(_) => Check::new(ID, Status::Ok, None, None, None)"),
+ ("src/shellcheck.rs", "cfg.extra_files.iter().filter(|f| root.join(f).is_file())", "cfg.extra_files.iter()"),
+ ("src/shellcheck.rs", "if files.is_empty() {", "if false {"),
+ ("src/lib.rs", "if let Some(sc) = &cfg.shellcheck {", "if let Some(sc) = &cfg.shellcheck.as_ref().filter(|_| !opts.measure_only) {"),
  ("src/main.rs", "ExitCode::from(report.exit_code() as u8)", "ExitCode::from(0)"),
- ("src/main.rs", "return ExitCode::from(2);\n        }\n    };\n    if let Some(cmd)", "return ExitCode::from(1);\n        }\n    };\n    if let Some(cmd)"),
+ ("src/main.rs", "return ExitCode::from(2);\n        }\n    };\n    if args.traceability {", "return ExitCode::from(1);\n        }\n    };\n    if args.traceability {"),
 ]
 res = []
 for f, a, b in muts:

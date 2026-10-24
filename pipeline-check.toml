@@ -14,3 +14,6 @@ extensions = ["rs"]
 [[traceability.sources]]
 dir = "tests"
 extensions = ["rs"]
+
+[shellcheck]
+extra_files = ["consumer/pre-push"]

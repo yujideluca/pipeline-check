@@ -35,7 +35,10 @@ python3 -I mutants.py     # demands that every planted fault makes the tests fai
 50 tests run, 50 passed, 0 failed, 0 ignored. Before the fixes the new `tests/bugs.rs` had 6 failures out of 8 (the other 2 passed and documented already-correct behaviour). Mutation: 25 mutants killed, 0 survived, 1 equivalent mutant removed on purpose (a deleted ref has no files, so it is never guarded), 1 invalid (does not compile, dropped). Two real gaps were found by survivors (build-file comment, top-level unknown key, measure-only) and closed with tests. Repeated runs are stable.
 
 ## Coverage
-Not measured: `cargo-llvm-cov` and `cargo-mutants` are not installed. The hand-made mutants stand in for them; branch coverage is unknown.
+Measured 2026-10-24 with `cargo-llvm-cov` 0.9.1 (user-space install): 88.6 % of lines, 83.2 % of functions, 86.0 % of regions; lowest are `dora.rs` (66.7 % of lines) and `main.rs` (67.7 %, the argument handling). Branch coverage is not available on this toolchain.
+
+## Mutation (cargo-mutants 26.0.0)
+340 mutants: 261 caught, 52 missed, 26 unviable, 1 timeout (83 % of viable mutants caught). Missed by file: `dora.rs` 17, `config.rs` 13, `arch.rs` 7, `github.rs` 5, `main.rs` 4, `fsutil.rs` 3, `traceability.rs` 2 (closed since), `fitness.rs` 1. The DORA arithmetic is the weakest part (PC-6 says it never fails the run, so a wrong number is silent): debt issue #3. `cargo mutants` needs `~/.cargo/bin` on PATH and takes about two minutes with `-j 4`.
 
 ## Defects found (all fixed in 64020bd)
 1. `import static android...` (Java) was not detected. Impact: an Android dependency slips into `:core` unnoticed. Reproduce: `tests/bugs.rs::a_java_static_import_of_android_is_a_violation`.

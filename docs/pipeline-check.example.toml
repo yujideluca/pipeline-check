@@ -40,3 +40,8 @@ dir = "tests"                            # relative to the root, or ~/...; a mis
 extensions = ["py", "kt", "js"]
 # label = "web"                          # shown before the file name in the matrix
 # env = "QUIZWEB"                        # when set, replaces dir
+
+[shellcheck]                            # optional: lint every tracked *.sh (PC-15); skipped when shellcheck is not installed
+# severity = "warning"
+# exclude = ["SC1090", "SC1091"]        # defaults: sourcing ~/.cargo/env on purpose
+# extra_files = ["tools/hooks/pre-push"] # scripts without the .sh extension

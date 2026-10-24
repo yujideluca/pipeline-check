@@ -17,7 +17,7 @@ fn files(v: &[(&str, &str)]) -> Vec<(String, String)> {
 #[test]
 fn requirement_rows_are_read_and_header_rows_are_not() {
     assert_eq!(parse_requirements(TABLE), vec![("AB-1".into(), "first".into()), ("AB-2".into(), "second thing".into())]);
-    assert!(parse_requirements("| ab-1 | lower | G |\n| A-1 | short | G |\n| AB- | none | G |\n| AB-1 |  | G |").is_empty());
+    assert!(parse_requirements("| aB-1 | lower first | G |\n| Ab-1 | lower second | G |\n| ab-1 | lower | G |\n| A-1 | short | G |\n| AB- | none | G |\n| AB-1 |  | G |").is_empty());
 }
 
 // REQ PC-14

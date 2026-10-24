@@ -19,6 +19,29 @@ pub struct Config {
     #[serde(default)]
     pub pre_push: PrePush,
     pub traceability: Option<Traceability>,
+    pub shellcheck: Option<Shellcheck>,
+}
+
+/// `[shellcheck]`: lint every tracked `*.sh` (and the listed extra files) with `shellcheck`, when it is installed.
+#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+pub struct Shellcheck {
+    #[serde(default = "warning")]
+    pub severity: String,
+    /// codes not reported: by default SC1090/SC1091, because the scripts source `~/.cargo/env` and `~/dev/env.sh` on purpose
+    #[serde(default = "default_exclude")]
+    pub exclude: Vec<String>,
+    /// scripts without the `.sh` extension, such as `tools/hooks/pre-push`
+    #[serde(default)]
+    pub extra_files: Vec<String>,
+}
+
+fn default_exclude() -> Vec<String> {
+    vec!["SC1090".into(), "SC1091".into()]
+}
+
+fn warning() -> String {
+    "warning".into()
 }
 
 /// `[traceability]`: where the requirements table is and which test folders carry the `REQ <ID>` tags.
