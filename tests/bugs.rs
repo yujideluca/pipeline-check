@@ -68,7 +68,7 @@ impl Gh for Runs {
 }
 
 fn github() -> pipeline_check::config::Github {
-    pipeline_check::config::Github { repo: "o/r".into(), branch: "main".into(), required_check: "gate".into() }
+    pipeline_check::config::Github { repo: "o/r".into(), branch: "main".into(), required_check: "gate".into(), protection_exception: None }
 }
 
 // REQ PC-11

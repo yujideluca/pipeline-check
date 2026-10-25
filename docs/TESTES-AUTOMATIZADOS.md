@@ -14,6 +14,7 @@ Rust crate, `std` plus `serde`, `toml`, `clap`. Pure logic (classification, pars
 | PC-3 | Android only in a build-file comment | ok | medium | tests/bugs.rs |
 | PC-4 | gate skipped, required or not | falha / pulado | high | tests/end_to_end.rs |
 | PC-7 | gh missing, 403, 404, wrong job | pulado / pulado / falha / falha | high | src/github.rs |
+| PC-16 | exception set: 404, wrong job / real protection / 403, gh missing; empty reason | aviso with reason / ok / pulado / config error | high | src/github.rs, src/config.rs |
 | PC-8 | missing file, typo key (also top level), non-positive limit | exit 2 / error | high | src/config.rs, tests/bugs.rs |
 | PC-9 | `import static android...`, `android.util.Log.d()` without import | falha | high | tests/bugs.rs |
 | PC-9 | android in comments, block comments, longer names | ok | medium | tests/bugs.rs |

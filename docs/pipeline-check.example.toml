@@ -26,6 +26,7 @@ limit = 1200
 repo = "yujideluca/my-project"
 branch = "main"
 required_check = "gate"
+# protection_exception = "why this repository cannot require the check"   # missing protection becomes aviso, not falha
 
 [dora]
 days = 30

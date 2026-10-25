@@ -48,6 +48,14 @@ pub fn ci_runs(gh: &dyn Gh, cfg: &Github) -> (Check, Option<f64>) {
     (check, rate)
 }
 
+/// A branch without the required protection: `falha`, or `aviso` with the reason when the config documents an exception (PC-16).
+fn unprotected(cfg: &Github, detail: String) -> Check {
+    match &cfg.protection_exception {
+        Some(reason) => Check::new(PROTECTION_ID, Status::Aviso, None, None, Some(format!("documented exception: {reason} ({detail})"))),
+        None => Check::new(PROTECTION_ID, Status::Falha, None, None, Some(detail)),
+    }
+}
+
 pub fn protection(gh: &dyn Gh, cfg: &Github) -> Check {
     let path = format!("repos/{}/branches/{}/protection/required_status_checks", cfg.repo, cfg.branch);
     match gh.run(&["api", &path]) {
@@ -59,11 +67,11 @@ pub fn protection(gh: &dyn Gh, cfg: &Github) -> Check {
             if named("contexts", "") || named("checks", "context") {
                 Check::new(PROTECTION_ID, Status::Ok, None, None, None)
             } else {
-                Check::new(PROTECTION_ID, Status::Falha, None, None, Some(format!("branch protection does not require '{}'", cfg.required_check)))
+                unprotected(cfg, format!("branch protection does not require '{}'", cfg.required_check))
             }
         }
         Err(e) if e.contains("404") => {
-            Check::new(PROTECTION_ID, Status::Falha, None, None, Some(format!("{} has no required status checks", cfg.branch)))
+            unprotected(cfg, format!("{} has no required status checks", cfg.branch))
         }
         Err(e) => Check::skipped(PROTECTION_ID, false, &format!("cannot read branch protection: {}", e.trim())),
     }
@@ -94,7 +102,7 @@ pub mod tests {
     }
 
     fn cfg() -> Github {
-        Github { repo: "o/r".into(), branch: "main".into(), required_check: "gate".into() }
+        Github { repo: "o/r".into(), branch: "main".into(), required_check: "gate".into(), protection_exception: None }
     }
 
     // REQ PC-7
@@ -126,6 +134,33 @@ pub mod tests {
         assert_eq!(ci_runs(&gone, &cfg()).0.status, Status::Pulado);
         let denied = fake("api", Err("HTTP 403: Upgrade to GitHub Pro"));
         assert_eq!(protection(&denied, &cfg()).status, Status::Pulado);
+    }
+
+    // REQ PC-16
+    #[test]
+    fn a_documented_exception_makes_a_missing_protection_an_aviso_never_ok() {
+        let excepted = Github { protection_exception: Some("mem job pushes with the built-in token".into()), ..cfg() };
+        let none = fake("api", Err("gh: Branch not protected (HTTP 404)"));
+        let c = protection(&none, &excepted);
+        assert_eq!(c.status, Status::Aviso);
+        assert!(c.nota.as_deref().unwrap_or("").contains("mem job pushes with the built-in token"), "{:?}", c.nota);
+        let other = fake("api", Ok(r#"{"contexts":["lint"],"checks":[]}"#));
+        assert_eq!(protection(&other, &excepted).status, Status::Aviso);
+        // without the exception the same answers stay falha
+        assert_eq!(protection(&none, &cfg()).status, Status::Falha);
+        assert_eq!(protection(&other, &cfg()).status, Status::Falha);
+    }
+
+    // REQ PC-16
+    #[test]
+    fn an_exception_does_not_hide_real_protection_or_an_unreadable_one() {
+        let excepted = Github { protection_exception: Some("reason".into()), ..cfg() };
+        let yes = fake("api", Ok(r#"{"contexts":["gate"],"checks":[{"context":"gate"}]}"#));
+        assert_eq!(protection(&yes, &excepted).status, Status::Ok);
+        let denied = fake("api", Err("HTTP 403: Upgrade to GitHub Pro"));
+        assert_eq!(protection(&denied, &excepted).status, Status::Pulado);
+        let gone = fake("api", Err("gh unavailable: not found"));
+        assert_eq!(protection(&gone, &excepted).status, Status::Pulado);
     }
 
     // REQ PC-7

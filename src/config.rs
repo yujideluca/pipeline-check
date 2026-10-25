@@ -153,6 +153,8 @@ pub struct Github {
     pub branch: String,
     /// name of the CI job that branch protection must require
     pub required_check: String,
+    /// why this repository cannot have the protection (PC-16): a missing protection is then `aviso`, not `falha`
+    pub protection_exception: Option<String>,
 }
 
 fn main_branch() -> String {
@@ -197,6 +199,9 @@ impl Config {
         }
         if let Some(f) = self.fitness.iter().find(|f| f.limit <= 0.0) {
             return Err(format!("fitness '{}': limit must be positive", f.id));
+        }
+        if self.github.as_ref().and_then(|g| g.protection_exception.as_deref()).is_some_and(|r| r.trim().is_empty()) {
+            return Err("github.protection_exception needs a reason".into());
         }
         Ok(())
     }
@@ -252,6 +257,18 @@ extensions = ["kt"]
         let err = parse(&GOOD.replace("aviso_a", "aviso")).err();
         let bad = format!("{GOOD}\naviso = 0.5\n");
         assert!(parse(&bad).is_err(), "unknown key accepted: {err:?}");
+    }
+
+    // REQ PC-16
+    #[test]
+    fn a_protection_exception_needs_a_reason() {
+        let with = |reason: &str| format!("{GOOD}\n[github]\nrepo = \"o/r\"\nrequired_check = \"gate\"\nprotection_exception = \"{reason}\"\n");
+        let c = parse(&with("mem job pushes with the built-in token")).unwrap();
+        assert_eq!(c.github.unwrap().protection_exception.as_deref(), Some("mem job pushes with the built-in token"));
+        assert!(parse(&with("")).is_err());
+        assert!(parse(&with("   ")).is_err());
+        let none = parse(&format!("{GOOD}\n[github]\nrepo = \"o/r\"\nrequired_check = \"gate\"\n")).unwrap();
+        assert_eq!(none.github.unwrap().protection_exception, None);
     }
 
     // REQ PC-8

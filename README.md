@@ -12,10 +12,11 @@ Checks: the project's own gate runs once; an architecture rule read from the sou
 import in the pure module); fitness functions with a limit each (warning from 80 %, failure at 100 %); DORA figures
 from git, a releases repository and the decision log; and, in local mode only, whether the last CI run is green and
 branch protection requires the CI job (read-only, through `gh`). A check that could not run is `pulado`, never `ok`.
+A repository that cannot have the protection documents why with `protection_exception = "reason"` in `[github]`: a missing protection is then `aviso` with that reason, never `ok` (PC-16).
 
 ## Use it in a project
 
-1. Copy `consumer/pipeline-check.sh` to `tools/pipeline-check.sh` and pin a version: `echo v0.4.0 > pipeline-check.version`.
+1. Copy `consumer/pipeline-check.sh` to `tools/pipeline-check.sh` and pin a version: `echo v0.5.0 > pipeline-check.version`.
 2. Write `pipeline-check.toml` (see `docs/pipeline-check.example.toml`).
 3. In CI: set up Rust (`dtolnay/rust-toolchain`) and run `tools/pipeline-check.sh --mode ci`.
 4. Optional local stand-in for branch protection: copy `consumer/pre-push` to `tools/hooks/pre-push`, set
