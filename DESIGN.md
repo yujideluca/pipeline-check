@@ -1,6 +1,6 @@
 # pipeline-check: design
 
-Last updated: 2026-10-24
+Last updated: 2026-10-25
 
 ## 1. What it is
 A Rust program that measures a project (gate, architecture rule, fitness functions, DORA figures, read-only GitHub
@@ -25,6 +25,7 @@ script and the optional pre-push hook.
 
 | Date | Type | Decision | Why |
 |---|---|---|---|
+| 2026-10-25 | Preventive | **Monthly architecture review**: pipeline-check v0.4.0, local mode, report of 2026-10-25: 0 falhas, 0 avisos, 0 pulados (own gate and mutation check green); 2 proposals; proposals created as pipeline-check#4, pipeline-check#5 | Monthly review standard (ADR-0013): the program measures, the skill judges |
 | 2026-10-24 | Corrective | **The pre-push logic moved from a copied shell hook into the program** (PC-13, v0.2.0). A test of the hook in a throwaway repository showed that the first push of main was never checked (`git diff` against a single commit compares the work tree) | The same lesson as ADR-0003: logic copied into six repositories cannot be fixed or tested once. Now it is tested against real git repositories |
 | 2026-10-24 | Preventive | **One repository, consumed by pinned version** ([ADR-0003](docs/adr/0003-one-repository-consumed-by-version.md)); the repository is public so CI needs no token; `--no-github` for the local pre-push check; v0.1.0 | Five copies in five repositories were already drifting. Root cause and rule in the ADR |
 | 2026-10-24 | Preventive | **The program measures, a skill judges** ([ADR-0002](docs/adr/0002-program-measures-skill-judges.md)); bug-finding tests found and fixed six defects (`docs/TESTES-AUTOMATIZADOS.md`) | The gate held only because Claude remembered to run it |
