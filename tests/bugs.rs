@@ -4,7 +4,7 @@ use pipeline_check::config::Architecture;
 use pipeline_check::fsutil::walk;
 use pipeline_check::github::{ci_runs, Gh};
 use pipeline_check::report::Status;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 fn tmp(name: &str) -> PathBuf {
@@ -14,7 +14,7 @@ fn tmp(name: &str) -> PathBuf {
     d
 }
 
-fn arch(root: &PathBuf, source: &str, file: &str) -> Status {
+fn arch(root: &Path, source: &str, file: &str) -> Status {
     std::fs::create_dir_all(root.join("core/src")).unwrap();
     std::fs::write(root.join("core/src").join(file), source).unwrap();
     let cfg = Architecture { pure_dirs: vec!["core/src".into()], build_files: vec![], forbidden: vec!["android".into(), "androidx".into()] };
