@@ -1,8 +1,9 @@
 //! PC-14: the traceability check, against small fixture projects.
+mod common;
+use common::Scratch;
 use pipeline_check::config::{Source, Traceability};
 use pipeline_check::traceability::{analyze, matrix, parse_requirements, resolve, run, tags_in_line};
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 fn prefixes() -> Vec<String> {
     ["//", "#", "--", "/**", "*"].iter().map(|s| s.to_string()).collect()
@@ -60,9 +61,8 @@ fn the_matrix_lists_files_and_marks_gaps_and_shortens_long_text() {
     assert!(matrix(&over).contains(&format!("| AB-5 {}… | **none** |", "z".repeat(70))), "71 characters are cut");
 }
 
-fn project(table: &str, tests: &[(&str, &str)]) -> (PathBuf, Traceability) {
-    static N: AtomicUsize = AtomicUsize::new(0);
-    let root = std::env::temp_dir().join(format!("pc-trace-{}-{}", std::process::id(), N.fetch_add(1, Ordering::SeqCst)));
+fn project(table: &str, tests: &[(&str, &str)]) -> (Scratch, Traceability) {
+    let root = Scratch::new("pc-trace");
     std::fs::create_dir_all(root.join("docs")).unwrap();
     std::fs::write(root.join("docs/REQUIREMENTS.md"), table).unwrap();
     for (p, t) in tests {

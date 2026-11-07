@@ -1,10 +1,11 @@
 //! The local pre-push check, against real throwaway git repositories (PC-13).
+mod common;
+use common::Scratch;
 use pipeline_check::config::Config;
 use pipeline_check::github::Gh;
 use pipeline_check::prepush::{changed_files, guarded, pre_push};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 const ZERO: &str = "0000000000000000000000000000000000000000";
 
@@ -22,10 +23,8 @@ fn git(root: &Path, args: &[&str]) -> String {
 }
 
 /// A repo with `files` committed; returns (root, head sha).
-fn repo(files: &[&str], gate: &str, guard: &str) -> (PathBuf, String, Config) {
-    static N: AtomicUsize = AtomicUsize::new(0);
-    let root = std::env::temp_dir().join(format!("pc-prepush-{}-{}", std::process::id(), N.fetch_add(1, Ordering::SeqCst)));
-    std::fs::create_dir_all(&root).unwrap();
+fn repo(files: &[&str], gate: &str, guard: &str) -> (Scratch, String, Config) {
+    let root = Scratch::new("pc-prepush");
     git(&root, &["init", "-q", "-b", "main"]);
     git(&root, &["config", "user.email", "t@t"]);
     git(&root, &["config", "user.name", "t"]);

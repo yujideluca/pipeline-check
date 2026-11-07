@@ -232,7 +232,9 @@ extensions = ["kt"]
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("pipeline-check.toml");
         std::fs::write(&path, text).unwrap();
-        Config::load(&path)
+        let config = Config::load(&path);
+        let _ = std::fs::remove_dir_all(&dir);
+        config
     }
 
     // REQ PC-8

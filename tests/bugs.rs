@@ -1,17 +1,15 @@
 //! Tests written to find defects (docs/TESTES-AUTOMATIZADOS.md): expected values come from the requirements
 //! (docs/REQUIREMENTS.md PC-9..PC-11), not from what the code currently does.
+mod common;
+use common::Scratch;
 use pipeline_check::config::Architecture;
 use pipeline_check::fsutil::walk;
 use pipeline_check::github::{ci_runs, Gh};
 use pipeline_check::report::Status;
-use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::path::Path;
 
-fn tmp(name: &str) -> PathBuf {
-    static N: AtomicUsize = AtomicUsize::new(0);
-    let d = std::env::temp_dir().join(format!("pc-bugs-{name}-{}-{}", std::process::id(), N.fetch_add(1, Ordering::SeqCst)));
-    std::fs::create_dir_all(&d).unwrap();
-    d
+fn tmp(name: &str) -> Scratch {
+    Scratch::new(&format!("pc-bugs-{name}"))
 }
 
 fn arch(root: &Path, source: &str, file: &str) -> Status {
@@ -51,7 +49,7 @@ fn walk_terminates_on_a_symlink_loop() {
     std::fs::write(r.join("a/b/f.kt"), "x").unwrap();
     std::os::unix::fs::symlink(&r, r.join("a/b/up")).unwrap();
     let (tx, rx) = std::sync::mpsc::channel();
-    let r2 = r.clone();
+    let r2 = r.to_path_buf();
     std::thread::spawn(move || {
         let files = walk(&r2);
         let _ = tx.send(files.iter().filter(|p| p.ends_with("f.kt")).count());

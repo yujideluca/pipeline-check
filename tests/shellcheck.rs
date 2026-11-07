@@ -1,15 +1,14 @@
 //! PC-15: the shellcheck check, with a stand-in program so the tests do not depend on shellcheck being installed.
+mod common;
+use common::Scratch;
 use pipeline_check::config::Shellcheck;
 use pipeline_check::report::{Check, Status};
 use pipeline_check::shellcheck::check_with;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
-fn repo(files: &[(&str, &str)]) -> PathBuf {
-    static N: AtomicUsize = AtomicUsize::new(0);
-    let root = std::env::temp_dir().join(format!("pc-sc-{}-{}", std::process::id(), N.fetch_add(1, Ordering::SeqCst)));
-    std::fs::create_dir_all(&root).unwrap();
+fn repo(files: &[(&str, &str)]) -> Scratch {
+    let root = Scratch::new("pc-sc");
     for (p, t) in files {
         std::fs::create_dir_all(root.join(p).parent().unwrap()).unwrap();
         std::fs::write(root.join(p), t).unwrap();
@@ -61,8 +60,7 @@ fn no_scripts_is_ok_and_a_missing_shellcheck_or_a_folder_outside_git_is_pulado()
     assert_eq!(show(&check_with(&none, &cfg(&[]), "no-such-shellcheck")), (Status::Ok, "no shell scripts".to_string()));
     let some = repo(&[("a.sh", "echo ok\n")]);
     assert_eq!(check_with(&some, &cfg(&[]), "no-such-shellcheck").status, Status::Pulado);
-    let outside = std::env::temp_dir().join(format!("pc-sc-nogit-{}", std::process::id()));
-    std::fs::create_dir_all(&outside).unwrap();
+    let outside = Scratch::new("pc-sc-nogit");
     assert_eq!(check_with(&outside, &cfg(&[]), "no-such-shellcheck").status, Status::Pulado);
 }
 

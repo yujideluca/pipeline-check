@@ -1,10 +1,11 @@
 //! The program run against small fixture projects: the acceptance criteria of the design.
+mod common;
+use common::Scratch;
 use pipeline_check::config::Config;
 use pipeline_check::github::Gh;
 use pipeline_check::report::{Mode, Report, Status};
 use pipeline_check::{run, Options};
-use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::path::Path;
 
 struct NoGh;
 impl Gh for NoGh {
@@ -13,9 +14,8 @@ impl Gh for NoGh {
     }
 }
 
-fn fixture(config_extra: &str) -> (PathBuf, Config) {
-    static N: AtomicUsize = AtomicUsize::new(0);
-    let root = std::env::temp_dir().join(format!("pc-e2e-{}-{}", std::process::id(), N.fetch_add(1, Ordering::SeqCst)));
+fn fixture(config_extra: &str) -> (Scratch, Config) {
+    let root = Scratch::new("pc-e2e");
     std::fs::create_dir_all(root.join("core/src")).unwrap();
     std::fs::write(root.join("core/build.gradle.kts"), "// pure\nplugins { kotlin(\"jvm\") }\n").unwrap();
     write_lines(&root.join("core/src/Clean.kt"), 10, None);
@@ -166,8 +166,7 @@ fn the_binary_writes_report_json_and_exits_by_the_worst_status() {
 // REQ PC-8
 #[test]
 fn a_missing_config_exits_with_2() {
-    let dir = std::env::temp_dir().join(format!("pc-noconf-{}", std::process::id()));
-    std::fs::create_dir_all(&dir).unwrap();
+    let dir = Scratch::new("pc-noconf");
     let out = std::process::Command::new(env!("CARGO_BIN_EXE_pipeline-check")).arg("--root").arg(&dir).output().unwrap();
     assert_eq!(out.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&out.stderr).contains("cannot read"));
