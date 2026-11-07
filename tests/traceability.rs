@@ -2,7 +2,7 @@
 mod common;
 use common::Scratch;
 use pipeline_check::config::{Source, Traceability};
-use pipeline_check::traceability::{analyze, malformed_id, matrix, parse_requirements, resolve, run, tags_in_line};
+use pipeline_check::traceability::{analyze, malformed_id, matrix, parse_requirements, read_requirements, resolve, run, scan_line, tags_in_line};
 use std::path::PathBuf;
 
 fn prefixes() -> Vec<String> {
@@ -28,7 +28,8 @@ fn tags_are_found_after_each_comment_opener_and_several_ids_per_line() {
         assert_eq!(tags_in_line(line, &prefixes()), vec!["AB-1"], "{line}");
     }
     assert_eq!(tags_in_line("// REQ AB-1, AB-22 CD-3", &prefixes()), vec!["AB-1", "AB-22", "CD-3"]);
-    for line in ["let x = 1; // REQ AB-1", "// REQ", "// REQ ab-1", "// see REQ AB-1", "REQ AB-1", "// REQAB-1"] {
+    assert_eq!(tags_in_line("let x = 1; // REQ AB-1", &prefixes()), vec!["AB-1"], "a comment after code is a tag (PC-18)");
+    for line in ["// REQ", "// REQ ab-1", "// see REQ AB-1", "\u{52}EQ AB-1 outside a string", "// REQAB-1"] {
         assert!(tags_in_line(line, &prefixes()).is_empty(), "{line}");
     }
 }
@@ -39,7 +40,7 @@ fn an_untested_requirement_and_an_unknown_tag_both_fail_and_are_named() {
     let a = analyze(TABLE, &files(&[("t.rs", "// REQ AB-1\n// REQ ZZ-9\n")]), &prefixes());
     assert!(!a.ok());
     assert_eq!(a.missing(), vec!["AB-2"]);
-    assert_eq!(a.unknown, vec!["t.rs names unknown requirement ZZ-9"]);
+    assert_eq!(a.unknown, vec!["t.rs:2 names unknown requirement ZZ-9"]);
     let ok = analyze(TABLE, &files(&[("t.rs", "// REQ AB-1\n"), ("u.rs", "// REQ AB-2\n// REQ AB-2\n"), ("v.rs", "// REQ AB-1\n")]), &prefixes());
     assert!(ok.ok());
     assert_eq!(ok.found["AB-1"], vec!["t.rs", "v.rs"]);
@@ -62,10 +63,10 @@ fn an_id_shaped_cell_or_tag_that_is_not_two_letters_dash_number_is_named_not_ski
     assert_eq!(
         a.malformed,
         vec![
-            "requirements table: AN-V2-1 is not an id (two capital letters, a dash and a number, like AN-29)",
-            "requirements table: C4-CLIN-1 is not an id (two capital letters, a dash and a number, like AN-29)",
-            "t.rs: REQ AN-V2-1 is not an id (two capital letters, a dash and a number, like AN-29)",
-            "t.rs: REQ CD-2x is not an id (two capital letters, a dash and a number, like AN-29)",
+            "requirements line 4: AN-V2-1 is not an id (two capital letters, a dash and a number, like AN-29)",
+            "requirements line 5: C4-CLIN-1 is not an id (two capital letters, a dash and a number, like AN-29)",
+            "t.rs:2: REQ AN-V2-1 is not an id (two capital letters, a dash and a number, like AN-29)",
+            "t.rs:3: REQ CD-2x is not an id (two capital letters, a dash and a number, like AN-29)",
         ]
     );
     assert_eq!(tags_in_line("// REQ AB-1: checks x", &prefixes()), vec!["AB-1"], "a colon after the id is punctuation");
@@ -73,6 +74,80 @@ fn an_id_shaped_cell_or_tag_that_is_not_two_letters_dash_number_is_named_not_ski
     assert_eq!(tags_in_line("-- REQ AB-1)", &prefixes()), vec!["AB-1"]);
     let clean = analyze("| AB-1 | first | G |\n", &files(&[("t.rs", "// REQ AB-1\n")]), &prefixes());
     assert!(clean.ok() && clean.malformed.is_empty());
+}
+
+// REQ PC-18
+#[test]
+fn every_table_row_is_a_requirement_or_a_named_problem() {
+    let t = "Intro text.\n| ID | Requirement | Source |\n|---|:---:|---|\n| AB-1 | uses `a | b` and a\\|pipe | G |\n| AB-2 |  | G |\n| AB-1 | again | G |\n| Prefix | AB | G |\n||x|\n|AB-3|tight|G|\n";
+    let (reqs, problems) = read_requirements(t);
+    assert_eq!(reqs, vec![("AB-1".into(), "uses `a | b` and a\\|pipe".into()), ("AB-3".into(), "tight".into())]);
+    assert_eq!(
+        problems,
+        vec![
+            "requirements line 5: requirement AB-2 has no text",
+            "requirements line 6: requirement AB-1 is listed twice (first on line 4)",
+            "requirements line 7: Prefix is not an id (two capital letters, a dash and a number, like AN-29)",
+            "requirements line 8: an empty first cell is not an id (two capital letters, a dash and a number, like AN-29)",
+        ]
+    );
+    let a = analyze(t, &files(&[("t.rs", "// REQ AB-1, AB-3\n")]), &prefixes());
+    assert!(!a.ok(), "a bad row fails even when every good row is tested");
+}
+
+// REQ PC-18
+#[test]
+fn tags_after_code_in_docstrings_test_names_and_repeated_req_are_read() {
+    let p = prefixes();
+    let cases: [(&str, &[&str]); 8] = [
+        ("#[test] // REQ SQ-5 SQ-6: primary window", &["SQ-5", "SQ-6"]),
+        ("@Test fun x() {   // REQ SP-3 (low-ease boundary)", &["SP-3"]),
+        ("\"\"\"REQ PB-7 PB-8: persistent footer.\"\"\"", &["PB-7", "PB-8"]),
+        ("describe \"REQ AR-1: steps appear in the box\"", &["AR-1"]),
+        ("[ test \"REQ AR-2: full titles\" <|", &["AR-2"]),
+        ("# REQ AN-33; REQ AN-35", &["AN-33", "AN-35"]),
+        ("    # REQ AN-33, AN-34; REQ AN-35 and then AB-9 in prose", &["AN-33", "AN-34", "AN-35"]),
+        (" * REQ AB-1.", &["AB-1"]),
+    ];
+    for (line, want) in cases {
+        let (ids, problems) = scan_line(line, &p);
+        assert_eq!(ids, want.to_vec(), "{line}");
+        assert!(problems.is_empty(), "{line}: {problems:?}");
+    }
+}
+
+// REQ PC-18
+#[test]
+fn a_req_that_would_not_count_is_a_named_problem_not_silence() {
+    let p = prefixes();
+    for line in ["// see REQ AB-1", "x = 1  # req AB-1", "// REQ: AB-1", "\u{52}EQ AB-1", "// REQ", "// REQ ab-1", "# Req CD-2x"] {
+        let (ids, problems) = scan_line(line, &p);
+        assert!(ids.is_empty() && !problems.is_empty(), "{line}: {ids:?} {problems:?}");
+    }
+    // built from pieces: a string that starts with the tag word would itself be read as a tag of this file
+    let want = ["R", "EQ AB-1 is not read as a tag: write REQ as the first word of a comment or of a test name"].concat();
+    assert_eq!(scan_line("// see REQ AB-1", &p).1, vec![want]);
+    for line in [
+        "assert(f(\"// REQ AB-1\"))",
+        "f(\"an escaped \\\" quote stays in the string // see REQ AB-1\")",
+        "/// the tag (`// REQ AB-1, AB-2`) in a doc comment",
+        "println!(\"{name}: REQ {w}\")",
+        "// REQ tags are listed in the matrix",
+        "let req = 3; // request AB-1",
+        "// ÄÖÜ ß REQ in prose without an id, é",
+        "// Prerequisite AB-1",
+    ] {
+        assert_eq!(scan_line(line, &p), (vec![], vec![]), "{line}");
+    }
+}
+
+// REQ PC-18
+#[test]
+fn a_missing_source_folder_is_exit_2_not_an_empty_pass() {
+    let (root, mut cfg) = project(TABLE, &[("tests/a.rs", "// REQ AB-1\n// REQ AB-2\n")]);
+    assert_eq!(run(&root, &cfg), 0);
+    cfg.sources.push(Source { dir: "tset".into(), extensions: vec!["rs".into()], label: String::new(), env: None });
+    assert_eq!(run(&root, &cfg), 2);
 }
 
 // REQ PC-14

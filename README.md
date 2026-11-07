@@ -4,7 +4,7 @@ A small Rust program that measures a software project against its limits and wri
 a check is `falha` (failure), so a CI job built on it fails by itself; a warning (`aviso`) never fails.
 It measures; it never judges. Judging (priorities, proposals) is done by a separate Claude skill that reads the report.
 
-Requirement traceability (`--traceability`, optional `[traceability]` section): every row of `docs/REQUIREMENTS.md` needs a test tagged `REQ <ID>`; writes `docs/TRACEABILITY.md`.
+Requirement traceability (`--traceability`, optional `[traceability]` section): every row of `docs/REQUIREMENTS.md` needs a test tagged `REQ <ID>`; writes `docs/TRACEABILITY.md`. An ID is two capital letters, a dash and a number (`AN-29`). A tag is `REQ` and the IDs, as the first word of a comment (also after code) or of a docstring or test name: `// REQ AB-1, AB-2`, `#[test] // REQ AB-1: what`, `"""REQ AB-1: ..."""`. Anything that looks like a requirement row or a tag but cannot be read fails with file and line (PC-17, PC-18).
 
 Shell scripts (`[shellcheck]`, optional): every tracked `*.sh` passes `shellcheck` when it is installed.
 
@@ -16,7 +16,7 @@ A repository that cannot have the protection documents why with `protection_exce
 
 ## Use it in a project
 
-1. Copy `consumer/pipeline-check.sh` to `tools/pipeline-check.sh` and pin a version: `echo v0.6.0 > pipeline-check.version`.
+1. Copy `consumer/pipeline-check.sh` to `tools/pipeline-check.sh` and pin a version: `echo v0.7.0 > pipeline-check.version`.
 2. Write `pipeline-check.toml` (see `docs/pipeline-check.example.toml`).
 3. In CI: set up Rust (`dtolnay/rust-toolchain`) and run `tools/pipeline-check.sh --mode ci`.
 4. Optional local stand-in for branch protection: copy `consumer/pre-push` to `tools/hooks/pre-push`, set
