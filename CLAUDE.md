@@ -6,6 +6,7 @@ project-template). Rust, Giovanni's choice (work.ask-language). Read `README.md`
 ## Principles (each one is checked by something)
 
 1. **Requirement, then test, then code**: `docs/REQUIREMENTS.md` → test tagged `REQ <ID>` → code. Checked by `pipeline-check --traceability`.
+   An ID is two capital letters, a dash and the next free number (`XX-12`), never a sub-scheme such as `XX-V2-1`; tasks run in parallel each get a block of free numbers reserved by whoever starts them. A tag is `REQ <ID>` as the first word of a comment, docstring or test name. pipeline-check v0.7.0 fails on any other shape (PC-17, PC-18).
 2. **The program measures, a skill judges** (ADR-0002): it never decides priorities; checked by the report having only measurements.
 3. **A tool used by more than one project lives here once and is consumed by pinned version, never copied** (ADR-0003).
 4. **The gate decides**: `tools/quality_gate.sh` (tests, traceability, hand-made mutation check), run by CI on every push.
