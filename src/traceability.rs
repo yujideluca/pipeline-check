@@ -11,6 +11,8 @@ pub struct Analysis {
     /// requirement id -> test files (labelled) that carry its tag, sorted
     pub found: BTreeMap<String, Vec<String>>,
     pub unknown: Vec<String>,
+    /// requirement cells and `REQ` tags shaped like an id that is not one (PC-17)
+    pub malformed: Vec<String>,
 }
 
 impl Analysis {
@@ -18,7 +20,7 @@ impl Analysis {
         self.reqs.iter().filter(|(i, _)| self.found[i].is_empty()).map(|(i, _)| i.as_str()).collect()
     }
     pub fn ok(&self) -> bool {
-        self.missing().is_empty() && self.unknown.is_empty()
+        self.missing().is_empty() && self.unknown.is_empty() && self.malformed.is_empty()
     }
 }
 
@@ -29,6 +31,28 @@ fn is_id_at(s: &str) -> Option<usize> {
     }
     let digits = b[3..].iter().take_while(|c| c.is_ascii_digit()).count();
     (digits > 0).then_some(3 + digits)
+}
+
+const ID_FORMAT: &str = "is not an id (two capital letters, a dash and a number, like AN-29)";
+
+/// PC-17: `s` looks like an attempt at an id (a capital, then capitals or digits, then a dash) but is not exactly
+/// `XX-<digits>`. Such an id used to be skipped without a word, so its requirement and tests were never checked.
+pub fn malformed_id(s: &str) -> bool {
+    let b = s.as_bytes();
+    let head = b.iter().take_while(|c| c.is_ascii_uppercase() || c.is_ascii_digit()).count();
+    let shaped = !b.is_empty() && b[0].is_ascii_uppercase() && b.get(head) == Some(&b'-');
+    shaped && is_id_at(s) != Some(s.len())
+}
+
+/// First cells of table rows that look like ids but are not (PC-17).
+fn malformed_rows(text: &str) -> Vec<String> {
+    text.lines()
+        .filter_map(|l| {
+            let rest = l.strip_prefix("| ")?;
+            let cell = rest[..rest.find(" |").unwrap_or(rest.len())].trim();
+            malformed_id(cell).then(|| format!("requirements table: {cell} {ID_FORMAT}"))
+        })
+        .collect()
 }
 
 /// Rows `| XX-1 | text |` of the requirements table.
@@ -46,20 +70,32 @@ pub fn parse_requirements(text: &str) -> Vec<(String, String)> {
 
 /// The ids named by a tag comment (`// REQ AB-1, AB-2`), if the line is one.
 pub fn tags_in_line(line: &str, prefixes: &[String]) -> Vec<String> {
+    tag_tokens(line, prefixes).0
+}
+
+/// (valid ids, id-shaped words that are not ids) after `REQ ` in a tag comment; the list ends at the first other word.
+fn tag_tokens(line: &str, prefixes: &[String]) -> (Vec<String>, Vec<String>) {
     let line = line.trim_start();
     for p in prefixes {
         let Some(rest) = line.strip_prefix(p.as_str()) else { continue };
-        let Some(mut rest) = rest.trim_start().strip_prefix("REQ ") else { continue };
-        let mut ids = Vec::new();
-        while let Some(n) = is_id_at(rest) {
-            ids.push(rest[..n].to_string());
-            rest = rest[n..].trim_start_matches([' ', ',']);
+        let Some(rest) = rest.trim_start().strip_prefix("REQ ") else { continue };
+        let (mut ids, mut bad) = (Vec::new(), Vec::new());
+        for word in rest.split([' ', ',']).filter(|w| !w.is_empty()) {
+            // `REQ AB-1: what it checks` is common style: punctuation ends the id, it is not part of it.
+            let word = word.trim_end_matches([':', ';', '.', ')']);
+            if is_id_at(word) == Some(word.len()) {
+                ids.push(word.to_string());
+            } else if malformed_id(word) {
+                bad.push(word.to_string());
+            } else {
+                break;
+            }
         }
-        if !ids.is_empty() {
-            return ids;
+        if !ids.is_empty() || !bad.is_empty() {
+            return (ids, bad);
         }
     }
-    Vec::new()
+    (Vec::new(), Vec::new())
 }
 
 /// `files`: (display name, content) of every test file.
@@ -67,9 +103,12 @@ pub fn analyze(requirements: &str, files: &[(String, String)], prefixes: &[Strin
     let reqs = parse_requirements(requirements);
     let mut found: BTreeMap<String, Vec<String>> = reqs.iter().map(|(i, _)| (i.clone(), Vec::new())).collect();
     let mut unknown = Vec::new();
+    let mut malformed = malformed_rows(requirements);
     for (name, text) in files {
         for line in text.lines() {
-            for tag in tags_in_line(line, prefixes) {
+            let (tags, bad) = tag_tokens(line, prefixes);
+            malformed.extend(bad.iter().map(|w| format!("{name}: REQ {w} {ID_FORMAT}")));
+            for tag in tags {
                 match found.get_mut(&tag) {
                     None => unknown.push(format!("{name} names unknown requirement {tag}")),
                     Some(v) if !v.contains(name) => v.push(name.clone()),
@@ -81,7 +120,7 @@ pub fn analyze(requirements: &str, files: &[(String, String)], prefixes: &[Strin
     for v in found.values_mut() {
         v.sort();
     }
-    Analysis { reqs, found, unknown }
+    Analysis { reqs, found, unknown, malformed }
 }
 
 pub fn matrix(a: &Analysis) -> String {
@@ -133,7 +172,7 @@ pub fn run(root: &Path, cfg: &Traceability) -> i32 {
     for m in a.missing() {
         println!("requirement {m} has no test");
     }
-    for u in &a.unknown {
+    for u in a.unknown.iter().chain(&a.malformed) {
         println!("{u}");
     }
     if !a.ok() {

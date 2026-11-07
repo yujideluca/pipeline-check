@@ -2,7 +2,7 @@
 mod common;
 use common::Scratch;
 use pipeline_check::config::{Source, Traceability};
-use pipeline_check::traceability::{analyze, matrix, parse_requirements, resolve, run, tags_in_line};
+use pipeline_check::traceability::{analyze, malformed_id, matrix, parse_requirements, resolve, run, tags_in_line};
 use std::path::PathBuf;
 
 fn prefixes() -> Vec<String> {
@@ -44,6 +44,35 @@ fn an_untested_requirement_and_an_unknown_tag_both_fail_and_are_named() {
     assert!(ok.ok());
     assert_eq!(ok.found["AB-1"], vec!["t.rs", "v.rs"]);
     assert_eq!(ok.found["AB-2"], vec!["u.rs"], "a file is listed once");
+}
+
+// REQ PC-17
+#[test]
+fn an_id_shaped_cell_or_tag_that_is_not_two_letters_dash_number_is_named_not_skipped() {
+    for bad in ["AN-V2-1", "C4-CLIN-1", "ABC-1", "A-1", "AB-", "AB-1a", "AB-1.2", "TC1-3"] {
+        assert!(malformed_id(bad), "{bad} must be reported");
+    }
+    for fine in ["AB-1", "XY-120", "ID", "---", "Ab-1", "ab-1", "Requirement", "A", ""] {
+        assert!(!malformed_id(fine), "{fine} is a valid id or not an id attempt");
+    }
+    let table = "| ID | Requirement |\n|---|---|\n| AB-1 | first | G |\n| AN-V2-1 | compound | G |\n| C4-CLIN-1 | digit prefix | G |\n";
+    let a = analyze(table, &files(&[("t.rs", "// REQ AB-1\n# REQ AN-V2-1\n// REQ AB-1, CD-2x\n")]), &prefixes());
+    assert!(!a.ok(), "a malformed id fails the check even when every valid requirement is tested");
+    assert_eq!(a.missing(), Vec::<&str>::new());
+    assert_eq!(
+        a.malformed,
+        vec![
+            "requirements table: AN-V2-1 is not an id (two capital letters, a dash and a number, like AN-29)",
+            "requirements table: C4-CLIN-1 is not an id (two capital letters, a dash and a number, like AN-29)",
+            "t.rs: REQ AN-V2-1 is not an id (two capital letters, a dash and a number, like AN-29)",
+            "t.rs: REQ CD-2x is not an id (two capital letters, a dash and a number, like AN-29)",
+        ]
+    );
+    assert_eq!(tags_in_line("// REQ AB-1: checks x", &prefixes()), vec!["AB-1"], "a colon after the id is punctuation");
+    assert_eq!(tags_in_line("# REQ AB-1, CD-2. done", &prefixes()), vec!["AB-1", "CD-2"]);
+    assert_eq!(tags_in_line("-- REQ AB-1)", &prefixes()), vec!["AB-1"]);
+    let clean = analyze("| AB-1 | first | G |\n", &files(&[("t.rs", "// REQ AB-1\n")]), &prefixes());
+    assert!(clean.ok() && clean.malformed.is_empty());
 }
 
 // REQ PC-14
