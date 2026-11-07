@@ -228,7 +228,7 @@ extensions = ["kt"]
     fn parse(text: &str) -> Result<Config, String> {
         static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
         let n = N.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-        let dir = std::env::temp_dir().join(format!("pc-config-{}-{n}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("pc-config-{}-{n}", std::process::id())); // scratch-ok: removed after loading
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("pipeline-check.toml");
         std::fs::write(&path, text).unwrap();

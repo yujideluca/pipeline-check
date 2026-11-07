@@ -6,11 +6,10 @@ cd "$(dirname "$0")/.."
 step() { printf '\n== %s\n' "$1"; }
 step "0/3 test scratch folders delete themselves"
 # A test that builds temp_dir()/name-PID by hand leaves it behind for good (each run has a new PID,
-# and /tmp is RAM). Integration tests take folders only from tests/common (Scratch, removed on drop);
-# a source file whose unit tests use temp_dir() must also remove what it made.
-stray=$(grep -rln 'temp_dir()' tests | grep -vx 'tests/common/mod.rs' || true)
-for f in $(grep -rl 'temp_dir()' src || true); do grep -q 'remove_dir_all' "$f" || stray="$stray $f"; done
-[ -z "${stray// /}" ] || { echo "hand-built temp folder (use tests/common Scratch, or remove it): $stray"; exit 1; }
+# and /tmp is RAM). Test folders come only from tests/common (Scratch, removed on drop); any other
+# temp_dir() line must say `scratch-ok:` and why.
+stray=$(grep -rn --include='*.rs' 'temp_dir()' src tests | grep -v '^tests/common/mod.rs:' | grep -v 'scratch-ok:' || true)
+[ -z "$stray" ] || { printf 'hand-built temp folder (use tests/common Scratch):\n%s\n' "$stray"; exit 1; }
 step "1/3 cargo test"
 cargo test --quiet
 step "2/3 requirement traceability"
