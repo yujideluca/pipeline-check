@@ -12,6 +12,7 @@ muts = [
  ("src/arch.rs", "if !code.starts_with(\"//\") && cfg.forbidden", "if cfg.forbidden"),
  ("src/arch.rs", "!code[..i].chars().next_back().is_some_and(ident)", "true"),
  ("src/gate.rs", "Ok(s) if s.success() =>", "Ok(_s) if true =>"),
+ ("src/gate.rs", "        c.env_remove(v);", "        let _ = v;"),
  ("src/config.rs", "#[serde(deny_unknown_fields)]\npub struct Config", "pub struct Config"),
  ("src/config.rs", "if !(0.0 < self.aviso_a && self.aviso_a < 1.0)", "if false"),
  ("src/dora.rs", "d.as_str() >= since", "d.as_str() <= since"),

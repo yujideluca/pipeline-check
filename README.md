@@ -16,7 +16,7 @@ A repository that cannot have the protection documents why with `protection_exce
 
 ## Use it in a project
 
-1. Copy `consumer/pipeline-check.sh` to `tools/pipeline-check.sh` and pin a version: `echo v0.7.0 > pipeline-check.version`.
+1. Copy `consumer/pipeline-check.sh` to `tools/pipeline-check.sh` and pin a version: `echo v0.8.0 > pipeline-check.version`.
 2. Write `pipeline-check.toml` (see `docs/pipeline-check.example.toml`).
 3. In CI: set up Rust (`dtolnay/rust-toolchain`) and run `tools/pipeline-check.sh --mode ci`.
 4. Optional local stand-in for branch protection: copy `consumer/pre-push` to `tools/hooks/pre-push`, set

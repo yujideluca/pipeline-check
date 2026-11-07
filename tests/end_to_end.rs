@@ -171,3 +171,23 @@ fn a_missing_config_exits_with_2() {
     assert_eq!(out.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&out.stderr).contains("cannot read"));
 }
+
+// REQ PC-19
+#[test]
+fn the_gate_does_not_inherit_the_git_variables_a_hook_exports() {
+    let root = Scratch::new("pc-gitenv");
+    let toml = "projeto = \"fixture\"\n[gate]\ncommand = \"env | grep '^GIT_' | cut -d= -f1 | sort > seen.txt; true\"\n[architecture]\npure_dirs = []\nbuild_files = []\n";
+    std::fs::write(root.join("pipeline-check.toml"), toml).unwrap();
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_pipeline-check"));
+    child.args(["--mode", "local", "--no-github"]).current_dir(&*root);
+    for v in pipeline_check::gate::GIT_LOCATION_VARS {
+        child.env(v, root.join("not-this-repo"));
+    }
+    child.env("GIT_EDITOR", "true");
+    child.output().unwrap();
+    let seen = std::fs::read_to_string(root.join("seen.txt")).unwrap();
+    for v in pipeline_check::gate::GIT_LOCATION_VARS {
+        assert!(!seen.lines().any(|l| l == v), "{v} reached the gate: {seen}");
+    }
+    assert!(seen.lines().any(|l| l == "GIT_EDITOR"), "other variables still pass: {seen}");
+}
