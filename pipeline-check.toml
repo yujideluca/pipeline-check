@@ -16,4 +16,4 @@ dir = "tests"
 extensions = ["rs"]
 
 [shellcheck]
-extra_files = ["consumer/pre-push"]
+extra_files = ["consumer/pre-push", "tools/hooks/pre-push"]
